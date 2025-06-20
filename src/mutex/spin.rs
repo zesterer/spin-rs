@@ -231,6 +231,8 @@ impl<T: ?Sized, R> SpinMutex<T, R> {
     pub fn try_lock(&self) -> Option<SpinMutexGuard<T>> {
         // The reason for using a strong compare_exchange is explained here:
         // https://github.com/Amanieu/parking_lot/pull/207#issuecomment-575869107
+        //
+        // See also the giant comment about Ordering::Acquire in try_lock_weak below.
         if self
             .lock
             .compare_exchange(false, true, Ordering::Acquire, Ordering::Relaxed)
@@ -251,6 +253,44 @@ impl<T: ?Sized, R> SpinMutex<T, R> {
     /// which can result in more efficient code on some platforms.
     #[inline(always)]
     pub fn try_lock_weak(&self) -> Option<SpinMutexGuard<T>> {
+        // There's some debate about whether Ordering::Acquire is sufficient here. In one
+        // interpretation of the the C++ standard, a lock operation like this could be re-ordered
+        // with a prior unlock of a different mutex. In other words this...
+        //
+        //     let a_guard = A.lock();
+        //     // do stuff...
+        //     drop(a_guard);
+        //     let b_guard = B.lock();
+        //     // do more stuff...
+        //     drop(b_guard);
+        //
+        //  ... could be reordered by the compiler into this...
+        //
+        //     let a_guard = A.lock();
+        //     let b_guard = B.lock();
+        //     // do stuff...
+        //     // do more stuff...
+        //     drop(a_guard);
+        //     drop(b_guard);
+        //
+        //  ...because both the store-release in `drop(a_guard)` and the load-acquire in `B.lock()`
+        //  allow this code movement. (Using Ordering::AcqRel here instead would forbid this,
+        //  because nothing can move down across a store-release, but it would also prevent valid
+        //  optimizations.) The worry is that this could lead to deadlocks in arguably correct
+        //  programs, for example one thread locking A-then-B while another thread locks B-then-A,
+        //  even though a straight-line reading of the code says that can't happen.
+        //
+        //  However, there's another interpretation of the standard that says this reordering is
+        //  illegal. The idea is that even though moving a (non-sequentially-consistent)
+        //  store-release down across a load-acquire is ok, moving it down across an *unbounded
+        //  loop* violates the requirement that atomic stores should be visible to other threads in
+        //  a "finite period of time": https://eel.is/c++draft/basic#intro.progress-18. Concretely,
+        //  `try_lock` or `try_lock_weak` could be reordered like this (not a problem?), but `lock`
+        //  with its internal loop can't be. This seems to be how compilers currently behave, in
+        //  any case. See also:
+        //  - https://preshing.com/20170612/can-reordering-of-release-acquire-operations-introduce-deadlock
+        //  - https://x.com/tvaneerd/status/1258426442649657346
+        //  - https://youtu.be/A8eCGOqgvH4?t=2551
         if self
             .lock
             .compare_exchange_weak(false, true, Ordering::Acquire, Ordering::Relaxed)
