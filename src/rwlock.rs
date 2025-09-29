@@ -16,7 +16,7 @@ use core::{
 /// A lock that provides data access to either one writer or many readers.
 ///
 /// This lock behaves in a similar manner to its namesake `std::sync::RwLock` but uses
-/// spinning for synchronisation instead. Unlike its namespace, this lock does not
+/// spinning for synchronisation instead. Unlike its namesake, this lock does not
 /// track lock poisoning.
 ///
 /// This type of lock allows a number of readers or at most one writer at any
