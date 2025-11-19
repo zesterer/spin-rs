@@ -2,7 +2,7 @@
 
 [![Crates.io version](https://img.shields.io/crates/v/spin.svg)](https://crates.io/crates/spin)
 [![docs.rs](https://docs.rs/spin/badge.svg)](https://docs.rs/spin/)
-[![Build Status](https://travis-ci.org/mvdnes/spin-rs.svg)](https://travis-ci.org/mvdnes/spin-rs)
+[![Build Status](https://github.com/zesterer/spin-rs/actions/workflows/rust.yml/badge.svg)](https://github.com/zesterer/spin-rs/actions)
 
 Spin-based synchronization primitives.
 
