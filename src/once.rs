@@ -174,7 +174,7 @@ impl<T, R: RelaxStrategy> Once<T, R> {
     }
 
     /// This method is similar to `call_once`, but allows the given closure to
-    /// fail, and lets the `Once` in a uninitialized state if it does.
+    /// fail, and leaves the `Once` in a uninitialized state if it does.
     ///
     /// This method will block the calling thread if another initialization
     /// routine is currently running.
