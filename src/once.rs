@@ -225,6 +225,33 @@ impl<T, R: RelaxStrategy> Once<T, R> {
         }
     }
 
+    /// Initializes the cell from a reference to the given value. If the cell is already
+    /// initialized, it returns the previous value.
+    ///
+    /// This method may help avoiding expensive stack copies on debug builds if
+    /// `T` is big enough.
+    ///
+    /// ```
+    /// #[derive(Clone, Copy, Debug)]
+    /// struct MyType([u8; 4096]);
+    ///
+    /// static INIT: spin::Once<MyType> = spin::Once::new();
+    ///
+    /// fn init_from_box(boxed: Box<MyType>) {
+    ///     INIT.init_from_ref(&boxed);
+    /// }
+    /// ```
+    pub fn init_from_ref(&self, value: &T) -> &T
+    where
+        T: Copy,
+    {
+        if let Some(value) = self.get() {
+            value
+        } else {
+            self.init_from_ref_slow(value)
+        }
+    }
+
     /// Attempts begin the initialization process by updating `self.status`.
     fn try_begin_init(&self) -> BeginInit<'_, T> {
         match self.status.compare_exchange(
@@ -274,6 +301,30 @@ impl<T, R: RelaxStrategy> Once<T, R> {
         // SAFETY: the caller must have made sure that the cell was
         // initialized.
         unsafe { self.force_get() }
+    }
+
+    fn init_from_ref_slow(&self, value: &T) -> &T
+    where
+        T: Copy,
+    {
+        loop {
+            match self.try_begin_init() {
+                BeginInit::Started => break,
+                BeginInit::Retry => continue,
+                BeginInit::Done(v) => return v,
+            }
+        }
+        // SAFETY: `UnsafeCell`/deref: currently the only accessor, mutably
+        // and immutably by cas exclusion.
+        // `write`: pointer comes from `MaybeUninit`.
+        // We've made sure to set the internal atomic status to `Running`, and
+        // we initialize the cell before calling complete_init().
+        unsafe {
+            (*self.data.get())
+                .as_mut_ptr()
+                .copy_from_nonoverlapping(value, 1);
+            self.complete_init()
+        }
     }
 
     #[cold]
@@ -819,5 +870,15 @@ mod tests {
             }
             assert_eq!(1, share.load(Ordering::SeqCst));
         }
+    }
+
+    #[test]
+    fn init_from_ref_basic() {
+        let once = Once::<usize, Spin>::new();
+
+        let first = 1usize;
+        let second = 2usize;
+        assert_eq!(*once.init_from_ref(&first), 1);
+        assert_eq!(*once.init_from_ref(&second), 1);
     }
 }
