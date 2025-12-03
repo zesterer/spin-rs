@@ -131,6 +131,17 @@ mod status {
 }
 use self::status::{AtomicStatus, Status};
 
+/// The result after trying to update the atomic status to begin initialization.
+#[derive(Clone, Copy, Debug)]
+enum BeginInit<'a, T> {
+    /// The status was successfully updated
+    Started,
+    /// The status was not updated, the caller should try again
+    Retry,
+    /// The cell was already initialzed
+    Done(&'a T),
+}
+
 impl<T, R: RelaxStrategy> Once<T, R> {
     /// Performs an initialization routine once and only once. The given closure
     /// will be executed if this is the first time `call_once` has been called,
@@ -214,37 +225,66 @@ impl<T, R: RelaxStrategy> Once<T, R> {
         }
     }
 
+    /// Attempts begin the initialization process by updating `self.status`.
+    fn try_begin_init(&self) -> BeginInit<'_, T> {
+        match self.status.compare_exchange(
+            Status::Incomplete,
+            Status::Running,
+            Ordering::Acquire,
+            Ordering::Acquire,
+        ) {
+            Ok(_) => BeginInit::Started,
+            Err(Status::Panicked) => panic!("Once panicked"),
+            Err(Status::Running) => match self.poll() {
+                Some(v) => BeginInit::Done(v),
+                None => BeginInit::Retry,
+            },
+            Err(Status::Complete) => {
+                return BeginInit::Done(unsafe {
+                    // SAFETY: The status is Complete
+                    self.force_get()
+                });
+            }
+            Err(Status::Incomplete) => {
+                // The compare_exchange failed, so this shouldn't ever be reached,
+                // however if we decide to switch to compare_exchange_weak it will
+                // be safer to leave this here than hit an unreachable
+                BeginInit::Retry
+            }
+        }
+    }
+
+    /// Complete the initialization process.
+    ///
+    /// # Safety
+    ///
+    /// The internal status must have been previously set to `Running` and the
+    /// internal cell properly initialized.
+    #[inline]
+    unsafe fn complete_init(&self) -> &T {
+        // SAFETY: Release is required here, so that all memory accesses done in the
+        // closure when initializing, become visible to other threads that perform Acquire
+        // loads.
+        //
+        // And, we also know that the changes this thread has done will not magically
+        // disappear from our cache, so it does not need to be AcqRel.
+        self.status.store(Status::Complete, Ordering::Release);
+
+        // This next line is mainly an optimization.
+        // SAFETY: the caller must have made sure that the cell was
+        // initialized.
+        unsafe { self.force_get() }
+    }
+
     #[cold]
     fn try_call_once_slow<F: FnOnce() -> Result<T, E>, E>(&self, f: F) -> Result<&T, E> {
         loop {
-            let xchg = self.status.compare_exchange(
-                Status::Incomplete,
-                Status::Running,
-                Ordering::Acquire,
-                Ordering::Acquire,
-            );
-
-            match xchg {
-                Ok(_must_be_state_incomplete) => {
+            match self.try_begin_init() {
+                BeginInit::Started => {
                     // Impl is defined after the match for readability
                 }
-                Err(Status::Panicked) => panic!("Once panicked"),
-                Err(Status::Running) => match self.poll() {
-                    Some(v) => return Ok(v),
-                    None => continue,
-                },
-                Err(Status::Complete) => {
-                    return Ok(unsafe {
-                        // SAFETY: The status is Complete
-                        self.force_get()
-                    });
-                }
-                Err(Status::Incomplete) => {
-                    // The compare_exchange failed, so this shouldn't ever be reached,
-                    // however if we decide to switch to compare_exchange_weak it will
-                    // be safer to leave this here than hit an unreachable
-                    continue;
-                }
+                BeginInit::Retry => continue,
+                BeginInit::Done(v) => return Ok(v),
             }
 
             // The compare-exchange succeeded, so we shall initialize it.
@@ -282,16 +322,9 @@ impl<T, R: RelaxStrategy> Once<T, R> {
             // unwinding is enabled.
             core::mem::forget(finish);
 
-            // SAFETY: Release is required here, so that all memory accesses done in the
-            // closure when initializing, become visible to other threads that perform Acquire
-            // loads.
-            //
-            // And, we also know that the changes this thread has done will not magically
-            // disappear from our cache, so it does not need to be AcqRel.
-            self.status.store(Status::Complete, Ordering::Release);
-
-            // This next line is mainly an optimization.
-            return unsafe { Ok(self.force_get()) };
+            // SAFETY: we have made sure to set the internal state via
+            // `try_begin_init()` and we have initialized the cell above.
+            return unsafe { Ok(self.complete_init()) };
         }
     }
 
