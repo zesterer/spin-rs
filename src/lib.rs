@@ -64,8 +64,7 @@
 //!   to support platforms without native atomic operations (Cortex-M0, etc.).
 //!   See the documentation for the `portable-atomic` crate for more information
 //!   with some requirements for no-std build:
-//!   https://github.com/taiki-e/portable-atomic#optional-features
-
+//!   <https://github.com/taiki-e/portable-atomic#optional-features>
 
 #[cfg(any(test, feature = "std"))]
 extern crate core;
