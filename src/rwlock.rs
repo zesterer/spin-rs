@@ -30,11 +30,10 @@ use core::{
 /// locking methods implement `Deref` (and `DerefMut` for the `write` methods)
 /// to allow access to the contained of the lock.
 ///
-/// An [`RwLockUpgradableGuard`](RwLockUpgradableGuard) can be upgraded to a
-/// writable guard through the [`RwLockUpgradableGuard::upgrade`](RwLockUpgradableGuard::upgrade)
-/// [`RwLockUpgradableGuard::try_upgrade`](RwLockUpgradableGuard::try_upgrade) functions.
-/// Writable or upgradeable guards can be downgraded through their respective `downgrade`
-/// functions.
+/// An [`RwLockUpgradableGuard`] can be upgraded to a writable guard through
+/// the [`RwLockUpgradableGuard::upgrade`] and [`RwLockUpgradableGuard::try_upgrade`]
+/// functions. Writable or upgradeable  guards can be downgraded through their
+/// respective `downgrade` functions.
 ///
 /// Based on Facebook's
 /// [`folly/RWSpinLock.h`](https://github.com/facebook/folly/blob/a0394d84f2d5c3e50ebfd0566f9d3acb52cfab5a/folly/synchronization/RWSpinLock.h).
