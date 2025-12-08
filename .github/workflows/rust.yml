@@ -48,7 +48,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        version: [1.60.0]
+        version: [1.71.0]
     steps:
     - uses: actions/checkout@v3
     - name: Install Rust

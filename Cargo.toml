@@ -1,6 +1,6 @@
 [package]
 name = "spin"
-version = "0.10.0"
+version = "0.11.0"
 authors = [
     "Mathijs van de Nes <git@mathijs.vd-nes.nl>",
     "John Ericson <git@JohnEricson.me>",
@@ -10,7 +10,7 @@ license = "MIT"
 repository = "https://github.com/zesterer/spin-rs.git"
 keywords = ["spinlock", "mutex", "rwlock"]
 description = "Spin-based synchronization primitives"
-rust-version = "1.60"
+rust-version = "1.71"
 
 [dependencies]
 lock_api_crate = { package = "lock_api", version = "0.4", optional = true }
