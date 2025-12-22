@@ -247,7 +247,7 @@ impl<T: ?Sized, R> SpinMutex<T, R> {
         }
     }
 
-    /// Try to lock this [`SpinMutex`], returning a lock guard if succesful.
+    /// Try to lock this [`SpinMutex`], returning a lock guard if successful.
     ///
     /// Unlike [`SpinMutex::try_lock`], this function is allowed to spuriously fail even when the mutex is unlocked,
     /// which can result in more efficient code on some platforms.

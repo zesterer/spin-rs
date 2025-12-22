@@ -152,7 +152,7 @@ impl<T, R> RwLock<T, R> {
         let RwLock { data, .. } = self;
         data.into_inner()
     }
-    /// Returns a mutable pointer to the underying data.
+    /// Returns a mutable pointer to the underlying data.
     ///
     /// This is mostly meant to be used for applications which require manual unlocking, but where
     /// storing both the lock and the pointer to the inner data gets inefficient.
