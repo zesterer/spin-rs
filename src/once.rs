@@ -138,7 +138,7 @@ enum BeginInit<'a, T> {
     Started,
     /// The status was not updated, the caller should try again
     Retry,
-    /// The cell was already initialzed
+    /// The cell was already initialized
     Done(&'a T),
 }
 
@@ -530,7 +530,7 @@ impl<T, R> Once<T, R> {
         debug_assert_eq!(
             self.status.load(Ordering::SeqCst),
             Status::Complete,
-            "Attempted to access an unintialized Once.  If this was to run without debug checks, this would be undefined behavior.  This is a serious bug and you must fix it.",
+            "Attempted to access an uninitialized Once.  If this was to run without debug checks, this would be undefined behavior.  This is a serious bug and you must fix it.",
         );
         self.force_get_mut()
     }
@@ -557,7 +557,7 @@ impl<T, R> Once<T, R> {
         debug_assert_eq!(
             self.status.load(Ordering::SeqCst),
             Status::Complete,
-            "Attempted to access an unintialized Once.  If this was to run without debug checks, this would be undefined behavior.  This is a serious bug and you must fix it.",
+            "Attempted to access an uninitialized Once.  If this was to run without debug checks, this would be undefined behavior.  This is a serious bug and you must fix it.",
         );
         self.force_into_inner()
     }
