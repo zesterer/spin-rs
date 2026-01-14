@@ -6,9 +6,12 @@ fn main() {
     let value = library::lib_function();
     assert_eq!(value, 1);
     let value = library::lib_function();
+    assert_eq!(value, -1);
+    let value = library::lib_function();
     assert_eq!(value, 2);
     let value = library::lib_function();
-    assert_eq!(value, 3);
+    assert_eq!(value, -2);
+    
 }
 
 mod library {
@@ -38,7 +41,7 @@ mod library {
             } else {
                 self.return_first = true;
                 return_value = self.second;
-                self.second += 1;
+                self.second -= 1;
             }
             return_value
         }
