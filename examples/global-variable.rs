@@ -1,70 +1,70 @@
-use std::thread;
-
-use library::*;
+//! This example is focused on the "library" part and not on the "main" function.
+//! The main function shall be a single threaded no_std environment. For example a real time bare metal kernel.
+//! The library shall be independently developed and the interface between the kernel and the library is a single C function call. Inside the library, a global variable is used to store its internal state.
 
 fn main() {
-    // Imagine having separate idependant processes connecting to the same shared library to get access to hardware ressources.
-
-    let regular_process = thread::spawn(|| {
-        while let Some(i) = regular_user() {
-            println!("hi {:>4.1} from regular user!", i);
-            assert_eq!(true, i >= FROM_NOW_ON_ONLY_IMPORTANT_USERS)
-        }
-    });
-
-    let important_process = thread::spawn(|| {
-        while let Some(i) = important_user() {
-            println!("hi {:>4.1} from important user!", i);
-        }
-    });
-
-    let _ = regular_process.join();
-    let _ = important_process.join();
-
-    assert_eq!(true, get_current_value() >= 0.0);
+    let value = library::lib_function();
+    assert_eq!(value, 1);
+    let value = library::lib_function();
+    assert_eq!(value, 2);
+    let value = library::lib_function();
+    assert_eq!(value, 3);
 }
 
-/// In a (shared) library, it might make sense to have an internal state that is only controlled by the library itself.
-/// An example could be a hardware ressources with a known limit.
-///
 mod library {
-    use spin::Mutex;
+    extern crate spin;
 
-    const REGULAR_STEP: f64 = 1.0;
-    const IMPORTANT_STEP: f64 = 1.5;
-    pub const FROM_NOW_ON_ONLY_IMPORTANT_USERS: f64 = 10.0;
-    pub const HARDWARE_LIMIT: f64 = 21.0;
-
-    struct State {
-        limited_hardware_ressource: f64,
+    struct VeryComplexStruct {
+        first: i32,
+        second: i32,
+        return_first: bool,
     }
 
-    static INTERNAL_STATE: Mutex<State> = Mutex::new(State {
-        limited_hardware_ressource: HARDWARE_LIMIT,
-    });
+    impl VeryComplexStruct {
+        pub const fn new() -> VeryComplexStruct {
+            VeryComplexStruct {
+                first: 1,
+                second: -1,
+                return_first: true,
+            }
+        }
 
-    pub fn regular_user() -> Option<f64> {
-        let mut state = INTERNAL_STATE.lock();
-        if state.limited_hardware_ressource <= FROM_NOW_ON_ONLY_IMPORTANT_USERS + REGULAR_STEP {
-            None
-        } else {
-            state.limited_hardware_ressource = state.limited_hardware_ressource - REGULAR_STEP;
-            Some(state.limited_hardware_ressource)
+        pub fn value(&mut self) -> i32 {
+            let return_value;
+            if self.return_first {
+                self.return_first = false;
+                return_value = self.first;
+                self.first += 1;
+            } else {
+                self.return_first = true;
+                return_value = self.second;
+                self.second += 1;
+            }
+            return_value
         }
     }
 
-    pub fn important_user() -> Option<f64> {
-        let mut state = INTERNAL_STATE.lock();
-        if state.limited_hardware_ressource <= IMPORTANT_STEP {
-            None
-        } else {
-            state.limited_hardware_ressource = state.limited_hardware_ressource - IMPORTANT_STEP;
-            Some(state.limited_hardware_ressource)
+    // A global variable is used to store the internal state of the library / plugin
+    static mut DEPRECATED_INTERNAL_STATE: VeryComplexStruct = VeryComplexStruct::new();       
+
+    // As static mut references shall not be used (https://doc.rust-lang.org/edition-guide/rust-2024/static-mut-references.html), spin::Mutex is used instead.
+    static INTERNAL_STATE: spin::Mutex<VeryComplexStruct> =
+        spin::Mutex::new(VeryComplexStruct::new());
+ 
+    #[unsafe(no_mangle)]
+    pub extern "C" fn lib_function() -> i32 {
+        let state = INTERNAL_STATE.try_lock();
+        match state {
+            Some(mut thing) => thing.value(),
+            None => 0,
         }
     }
 
-    pub fn get_current_value() -> f64 {
-        let state = INTERNAL_STATE.lock();
-        state.limited_hardware_ressource
+    #[unsafe(no_mangle)]
+    pub extern "C" fn deprecated_lib_function() -> i32 {
+        #[allow(static_mut_refs)]
+        unsafe {
+            DEPRECATED_INTERNAL_STATE.value()
+        }
     }
 }
