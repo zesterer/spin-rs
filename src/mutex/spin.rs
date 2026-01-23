@@ -174,7 +174,7 @@ impl<T: ?Sized, R: RelaxStrategy> SpinMutex<T, R> {
     /// }
     /// ```
     #[inline(always)]
-    pub fn lock(&self) -> SpinMutexGuard<T> {
+    pub fn lock(&self) -> SpinMutexGuard<'_, T> {
         // Can fail to lock even if the spinlock is not locked. May be more efficient than `try_lock`
         // when called in a loop.
         loop {
@@ -228,7 +228,7 @@ impl<T: ?Sized, R> SpinMutex<T, R> {
     /// assert!(maybe_guard2.is_none());
     /// ```
     #[inline(always)]
-    pub fn try_lock(&self) -> Option<SpinMutexGuard<T>> {
+    pub fn try_lock(&self) -> Option<SpinMutexGuard<'_, T>> {
         // The reason for using a strong compare_exchange is explained here:
         // https://github.com/Amanieu/parking_lot/pull/207#issuecomment-575869107
         //
@@ -252,7 +252,7 @@ impl<T: ?Sized, R> SpinMutex<T, R> {
     /// Unlike [`SpinMutex::try_lock`], this function is allowed to spuriously fail even when the mutex is unlocked,
     /// which can result in more efficient code on some platforms.
     #[inline(always)]
-    pub fn try_lock_weak(&self) -> Option<SpinMutexGuard<T>> {
+    pub fn try_lock_weak(&self) -> Option<SpinMutexGuard<'_, T>> {
         // There's some debate about whether Ordering::Acquire is sufficient here. In one
         // interpretation of the the C++ standard, a lock operation like this could be re-ordered
         // with a prior unlock of a different mutex. In other words this...
