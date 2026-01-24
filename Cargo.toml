@@ -11,6 +11,7 @@ repository = "https://github.com/zesterer/spin-rs.git"
 keywords = ["spinlock", "mutex", "rwlock"]
 description = "Spin-based synchronization primitives"
 rust-version = "1.71"
+edition = "2021"
 
 [dependencies]
 lock_api_crate = { package = "lock_api", version = "0.4", optional = true }
