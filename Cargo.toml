@@ -19,7 +19,7 @@ lock_api_crate = { package = "lock_api", version = "0.4", optional = true }
 portable-atomic = { version = "1.3", optional = true, default-features = false, features = ["require-cas"] }
 
 [features]
-default = ["lock_api", "mutex", "spin_mutex", "rwlock", "once", "lazy", "barrier"]
+default = ["lock_api", "mutex", "spin_mutex", "rwlock", "once", "lazylock", "barrier"]
 
 # Enables `Mutex`. Must be used with either `spin_mutex` or `use_ticket_mutex`.
 mutex = []
@@ -42,8 +42,8 @@ rwlock = []
 # Enables `Once`.
 once = []
 
-# Enables `Lazy`.
-lazy = ["once"]
+# Enables `LazyLock`.
+lazylock = ["once"]
 
 # Enables `Barrier`. Because this feature uses `mutex`, either `spin_mutex` or `use_ticket_mutex` must be enabled.
 barrier = ["mutex"]

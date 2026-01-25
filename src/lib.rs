@@ -3,12 +3,12 @@
 #![deny(missing_docs)]
 
 //! This crate provides [spin-based](https://en.wikipedia.org/wiki/Spinlock) versions of the
-//! primitives in `std::sync` and `std::lazy`. Because synchronization is done through spinning,
+//! primitives in `std::sync`. Because synchronization is done through spinning,
 //! the primitives are suitable for use in `no_std` environments.
 //!
 //! # Features
 //!
-//! - `Mutex`, `RwLock`, `Once`/`SyncOnceCell`, and `SyncLazy` equivalents
+//! - `Mutex`, `RwLock`, `Once`/`SyncOnceCell`, and `LazyLock` equivalents
 //!
 //! - Support for `no_std` environments
 //!
@@ -80,8 +80,8 @@ use portable_atomic as atomic;
 #[cfg(feature = "barrier")]
 #[cfg_attr(docsrs, doc(cfg(feature = "barrier")))]
 pub mod barrier;
-#[cfg(feature = "lazy")]
-#[cfg_attr(docsrs, doc(cfg(feature = "lazy")))]
+#[cfg(feature = "lazylock")]
+#[cfg_attr(docsrs, doc(cfg(feature = "lazylock")))]
 pub mod lazy;
 #[cfg(feature = "mutex")]
 #[cfg_attr(docsrs, doc(cfg(feature = "mutex")))]
@@ -117,13 +117,20 @@ pub use rwlock::RwLockReadGuard;
 #[cfg_attr(docsrs, doc(cfg(feature = "barrier")))]
 pub type Barrier = crate::barrier::Barrier;
 
-/// A value which is initialized on the first access. See [`lazy::Lazy`] for documentation.
+/// A value which is initialized on the first access. See [`lazy::LazyLock`] for documentation.
 ///
 /// A note for advanced users: this alias exists to avoid subtle type inference errors due to the default relax
 /// strategy type parameter. If you need a non-default relax strategy, use the fully-qualified path.
-#[cfg(feature = "lazy")]
-#[cfg_attr(docsrs, doc(cfg(feature = "lazy")))]
-pub type Lazy<T, F = fn() -> T> = crate::lazy::Lazy<T, F>;
+#[cfg(feature = "lazylock")]
+#[cfg_attr(docsrs, doc(cfg(feature = "lazylock")))]
+pub type LazyLock<T, F = fn() -> T> = crate::lazy::LazyLock<T, F>;
+
+/// A type alias to [`LazyLock`] for compatibility reasons.
+/// 
+#[deprecated]
+#[cfg(feature = "lazylock")]
+#[cfg_attr(docsrs, doc(cfg(feature = "lazylock")))]
+pub type Lazy<T, F = fn() -> T> = crate::lazy::LazyLock<T, F>;
 
 /// A primitive that synchronizes the execution of multiple threads. See [`mutex::Mutex`] for documentation.
 ///
