@@ -82,7 +82,7 @@ use portable_atomic as atomic;
 pub mod barrier;
 #[cfg(feature = "lazylock")]
 #[cfg_attr(docsrs, doc(cfg(feature = "lazylock")))]
-pub mod lazy;
+pub mod lazylock;
 #[cfg(feature = "mutex")]
 #[cfg_attr(docsrs, doc(cfg(feature = "mutex")))]
 pub mod mutex;
@@ -117,20 +117,20 @@ pub use rwlock::RwLockReadGuard;
 #[cfg_attr(docsrs, doc(cfg(feature = "barrier")))]
 pub type Barrier = crate::barrier::Barrier;
 
-/// A value which is initialized on the first access. See [`lazy::LazyLock`] for documentation.
+/// A value which is initialized on the first access. See [`lazylock::LazyLock`] for documentation.
 ///
 /// A note for advanced users: this alias exists to avoid subtle type inference errors due to the default relax
 /// strategy type parameter. If you need a non-default relax strategy, use the fully-qualified path.
 #[cfg(feature = "lazylock")]
 #[cfg_attr(docsrs, doc(cfg(feature = "lazylock")))]
-pub type LazyLock<T, F = fn() -> T> = crate::lazy::LazyLock<T, F>;
+pub type LazyLock<T, F = fn() -> T> = crate::lazylock::LazyLock<T, F>;
 
 /// A type alias to [`LazyLock`] for compatibility reasons.
 /// 
 #[deprecated]
 #[cfg(feature = "lazylock")]
 #[cfg_attr(docsrs, doc(cfg(feature = "lazylock")))]
-pub type Lazy<T, F = fn() -> T> = crate::lazy::LazyLock<T, F>;
+pub type Lazy<T, F = fn() -> T> = crate::lazylock::LazyLock<T, F>;
 
 /// A primitive that synchronizes the execution of multiple threads. See [`mutex::Mutex`] for documentation.
 ///
