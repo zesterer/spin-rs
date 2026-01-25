@@ -45,6 +45,9 @@ once = []
 # Enables `LazyLock`.
 lazylock = ["once"]
 
+# Enables `LazyLock`. This feature flag is here for compatibility reasons and may be dropped in future versions. 
+lazy = ["lazylock"]
+
 # Enables `Barrier`. Because this feature uses `mutex`, either `spin_mutex` or `use_ticket_mutex` must be enabled.
 barrier = ["mutex"]
 
