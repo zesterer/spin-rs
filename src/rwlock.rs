@@ -259,7 +259,7 @@ impl<T: ?Sized, R> RwLock<T, R> {
     // Acquire a read lock, returning the new lock value.
     fn acquire_reader(&self) -> usize {
         // An arbitrary cap that allows us to catch overflows long before they happen
-        const MAX_READERS: usize = core::usize::MAX / READER / 2;
+        const MAX_READERS: usize = usize::MAX / READER / 2;
 
         let value = self.lock.fetch_add(READER, Ordering::Acquire);
 
@@ -456,14 +456,14 @@ impl<T: ?Sized + fmt::Debug, R> fmt::Debug for RwLock<T, R> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self.try_read() {
             Some(guard) => write!(f, "RwLock {{ data: ")
-                .and_then(|()| (&*guard).fmt(f))
+                .and_then(|()| (*guard).fmt(f))
                 .and_then(|()| write!(f, " }}")),
             None => write!(f, "RwLock {{ <locked> }}"),
         }
     }
 }
 
-impl<T: ?Sized + Default, R> Default for RwLock<T, R> {
+impl<T: Default, R> Default for RwLock<T, R> {
     fn default() -> Self {
         Self::new(Default::default())
     }
@@ -831,7 +831,7 @@ unsafe impl<R: RelaxStrategy> lock_api_crate::RawRwLock for RwLock<(), R> {
     #[inline(always)]
     fn try_lock_exclusive(&self) -> bool {
         // Prevent guard destructor running
-        self.try_write().map(|g| core::mem::forget(g)).is_some()
+        self.try_write().map(core::mem::forget).is_some()
     }
 
     #[inline(always)]
@@ -852,7 +852,7 @@ unsafe impl<R: RelaxStrategy> lock_api_crate::RawRwLock for RwLock<(), R> {
     #[inline(always)]
     fn try_lock_shared(&self) -> bool {
         // Prevent guard destructor running
-        self.try_read().map(|g| core::mem::forget(g)).is_some()
+        self.try_read().map(core::mem::forget).is_some()
     }
 
     #[inline(always)]
@@ -881,7 +881,7 @@ unsafe impl<R: RelaxStrategy> lock_api_crate::RawRwLockUpgrade for RwLock<(), R>
     fn try_lock_upgradable(&self) -> bool {
         // Prevent guard destructor running
         self.try_upgradeable_read()
-            .map(|g| core::mem::forget(g))
+            .map(core::mem::forget)
             .is_some()
     }
 
@@ -913,7 +913,7 @@ unsafe impl<R: RelaxStrategy> lock_api_crate::RawRwLockUpgrade for RwLock<(), R>
         };
         tmp_guard
             .try_upgrade()
-            .map(|g| core::mem::forget(g))
+            .map(core::mem::forget)
             .is_ok()
     }
 }

@@ -267,10 +267,10 @@ impl<T, R: RelaxStrategy> Once<T, R> {
                 None => BeginInit::Retry,
             },
             Err(Status::Complete) => {
-                return BeginInit::Done(unsafe {
+                BeginInit::Done(unsafe {
                     // SAFETY: The status is Complete
                     self.force_get()
-                });
+                })
             }
             Err(Status::Incomplete) => {
                 // The compare_exchange failed, so this shouldn't ever be reached,
