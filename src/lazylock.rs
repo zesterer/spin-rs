@@ -1,22 +1,22 @@
 //! Synchronization primitives for lazy evaluation.
 //!
-//! Implementation adapted from the `SyncLazy` type of the standard library. See:
-//! <https://doc.rust-lang.org/std/lazy/struct.SyncLazy.html>
+//! Implementation adapted from the `LazyLock` type of the standard library. See:
+//! <https://doc.rust-lang.org/std/sync/struct.LazyLock.html>
 
 use crate::{once::Once, RelaxStrategy, Spin};
 use core::{cell::Cell, fmt, ops::Deref};
 
 /// A value which is initialized on the first access.
 ///
-/// This type is a thread-safe `Lazy`, and can be used in statics.
+/// This type is a thread-safe `LazyLock`, and can be used in statics.
 ///
 /// # Examples
 ///
 /// ```
 /// use std::collections::HashMap;
-/// use spin::Lazy;
+/// use spin::LazyLock;
 ///
-/// static HASHMAP: Lazy<HashMap<i32, String>> = Lazy::new(|| {
+/// static HASHMAP: LazyLock<HashMap<i32, String>> = LazyLock::new(|| {
 ///     println!("initializing");
 ///     let mut m = HashMap::new();
 ///     m.insert(13, "Spica".to_string());
@@ -38,14 +38,14 @@ use core::{cell::Cell, fmt, ops::Deref};
 ///     //   Some("Hoyten")
 /// }
 /// ```
-pub struct Lazy<T, F = fn() -> T, R = Spin> {
+pub struct LazyLock<T, F = fn() -> T, R = Spin> {
     cell: Once<T, R>,
     init: Cell<Option<F>>,
 }
 
-impl<T: fmt::Debug, F, R> fmt::Debug for Lazy<T, F, R> {
+impl<T: fmt::Debug, F, R> fmt::Debug for LazyLock<T, F, R> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let mut d = f.debug_tuple("Lazy");
+        let mut d = f.debug_tuple("LazyLock");
         let d = if let Some(x) = self.cell.get() {
             d.field(&x)
         } else {
@@ -55,15 +55,15 @@ impl<T: fmt::Debug, F, R> fmt::Debug for Lazy<T, F, R> {
     }
 }
 
-// We never create a `&F` from a `&Lazy<T, F>` so it is fine
+// We never create a `&F` from a `&LazyLock<T, F>` so it is fine
 // to not impl `Sync` for `F`
 // we do create a `&mut Option<F>` in `force`, but this is
 // properly synchronized, so it only happens once
 // so it also does not contribute to this impl.
-unsafe impl<T, F: Send> Sync for Lazy<T, F> where Once<T>: Sync {}
+unsafe impl<T, F: Send> Sync for LazyLock<T, F> where Once<T>: Sync {}
 // auto-derived `Send` impl is OK.
 
-impl<T, F, R> Lazy<T, F, R> {
+impl<T, F, R> LazyLock<T, F, R> {
     /// Creates a new lazy value with the given initializing
     /// function.
     pub const fn new(f: F) -> Self {
@@ -82,7 +82,7 @@ impl<T, F, R> Lazy<T, F, R> {
     }
 }
 
-impl<T, F: FnOnce() -> T, R: RelaxStrategy> Lazy<T, F, R> {
+impl<T, F: FnOnce() -> T, R: RelaxStrategy> LazyLock<T, F, R> {
     /// Forces the evaluation of this lazy value and
     /// returns a reference to result. This is equivalent
     /// to the `Deref` impl, but is explicit.
@@ -90,22 +90,22 @@ impl<T, F: FnOnce() -> T, R: RelaxStrategy> Lazy<T, F, R> {
     /// # Examples
     ///
     /// ```
-    /// use spin::Lazy;
+    /// use spin::LazyLock;
     ///
-    /// let lazy = Lazy::new(|| 92);
+    /// let lazy = LazyLock::new(|| 92);
     ///
-    /// assert_eq!(Lazy::force(&lazy), &92);
+    /// assert_eq!(LazyLock::force(&lazy), &92);
     /// assert_eq!(&*lazy, &92);
     /// ```
     pub fn force(this: &Self) -> &T {
         this.cell.call_once(|| match this.init.take() {
             Some(f) => f(),
-            None => panic!("Lazy instance has previously been poisoned"),
+            None => panic!("LazyLock instance has previously been poisoned"),
         })
     }
 }
 
-impl<T, F: FnOnce() -> T, R: RelaxStrategy> Deref for Lazy<T, F, R> {
+impl<T, F: FnOnce() -> T, R: RelaxStrategy> Deref for LazyLock<T, F, R> {
     type Target = T;
 
     fn deref(&self) -> &T {
@@ -113,7 +113,7 @@ impl<T, F: FnOnce() -> T, R: RelaxStrategy> Deref for Lazy<T, F, R> {
     }
 }
 
-impl<T: Default, R> Default for Lazy<T, fn() -> T, R> {
+impl<T: Default, R> Default for LazyLock<T, fn() -> T, R> {
     /// Creates a new lazy value using `Default` as the initializing function.
     fn default() -> Self {
         Self::new(T::default)

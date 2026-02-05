@@ -18,7 +18,7 @@ spinlocks. If you have access to `std`, it's likely that the primitives in
 
 ## Features
 
-- `Mutex`, `RwLock`, `Once`, `Lazy` and `Barrier` equivalents
+- `Mutex`, `RwLock`, `Once`, `LazyLock` and `Barrier` equivalents
 - Support for `no_std` environments
 - [`lock_api`](https://crates.io/crates/lock_api) compatibility
 - Upgradeable `RwLock` guards
@@ -84,7 +84,7 @@ The crate comes with a few feature flags that you may wish to use.
 
 - `once` enables the `Once` type.
 
-- `lazy` enables the `Lazy` type.
+- `lazylock` enables the `LazyLock` type.
 
 - `barrier` enables the `Barrier` type.
 
