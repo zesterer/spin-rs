@@ -13,7 +13,10 @@ trait Mutex<T>: Send + Sync + 'static {
 }
 
 impl<T: Send + 'static> Mutex<T> for spin::mutex::SpinMutex<T> {
-    type Guard<'a> = spin::mutex::SpinMutexGuard<'a, T> where Self: 'a;
+    type Guard<'a>
+        = spin::mutex::SpinMutexGuard<'a, T>
+    where
+        Self: 'a;
     fn new(x: T) -> Self {
         spin::mutex::SpinMutex::new(x)
     }
@@ -23,7 +26,10 @@ impl<T: Send + 'static> Mutex<T> for spin::mutex::SpinMutex<T> {
 }
 
 impl<T: Send + 'static> Mutex<T> for spin::mutex::TicketMutex<T> {
-    type Guard<'a> = spin::mutex::TicketMutexGuard<'a, T> where Self: 'a;
+    type Guard<'a>
+        = spin::mutex::TicketMutexGuard<'a, T>
+    where
+        Self: 'a;
     fn new(x: T) -> Self {
         spin::mutex::TicketMutex::new(x)
     }
@@ -33,7 +39,10 @@ impl<T: Send + 'static> Mutex<T> for spin::mutex::TicketMutex<T> {
 }
 
 impl<T: Send + 'static> Mutex<T> for std::sync::Mutex<T> {
-    type Guard<'a> = std::sync::MutexGuard<'a, T> where Self: 'a;
+    type Guard<'a>
+        = std::sync::MutexGuard<'a, T>
+    where
+        Self: 'a;
     fn new(x: T) -> Self {
         std::sync::Mutex::new(x)
     }
