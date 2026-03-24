@@ -583,10 +583,7 @@ impl<T, R> Drop for Once<T, R> {
     fn drop(&mut self) {
         // No need to do any atomic access here, we have &mut!
         if *self.status.get_mut() == Status::Complete {
-            unsafe {
-                //TODO: Use MaybeUninit::assume_init_drop once stabilised
-                core::ptr::drop_in_place((*self.data.get()).as_mut_ptr());
-            }
+            unsafe { self.data.get_mut().assume_init_drop() }
         }
     }
 }
