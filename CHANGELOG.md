@@ -11,9 +11,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+### Fixed
+
+# [0.11.0] - 2026-05-14
+
+### Added
+
+- `lock_api` mapped read/write guard for `RwLock`
+- `Once::init_from_ref`
+- `rustc-dep-of-std` feature, allowing `spin` to be used as a standard library dependency
+
+### Changed
+
+- MSRV is now `1.71`
 - `Lazy` is now `LazyLock`
 
 ### Fixed
+
+- `lock_api` feature name for `RawRwLockUpgradeDowngrade`
 
 # [0.10.0] - 2025-03-26
 
