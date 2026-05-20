@@ -330,14 +330,14 @@ impl<T: ?Sized + fmt::Debug, R> fmt::Debug for SpinMutex<T, R> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self.try_lock() {
             Some(guard) => write!(f, "Mutex {{ data: ")
-                .and_then(|()| (&*guard).fmt(f))
+                .and_then(|()| (*guard).fmt(f))
                 .and_then(|()| write!(f, " }}")),
             None => write!(f, "Mutex {{ <locked> }}"),
         }
     }
 }
 
-impl<T: ?Sized + Default, R> Default for SpinMutex<T, R> {
+impl<T: Default, R> Default for SpinMutex<T, R> {
     fn default() -> Self {
         Self::new(Default::default())
     }

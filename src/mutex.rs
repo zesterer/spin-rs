@@ -258,7 +258,7 @@ impl<T: ?Sized + fmt::Debug, R> fmt::Debug for Mutex<T, R> {
     }
 }
 
-impl<T: ?Sized + Default, R> Default for Mutex<T, R> {
+impl<T: Default, R> Default for Mutex<T, R> {
     fn default() -> Self {
         Self::new(Default::default())
     }
@@ -304,13 +304,13 @@ impl<'a, T: ?Sized + fmt::Display> fmt::Display for MutexGuard<'a, T> {
 impl<'a, T: ?Sized> Deref for MutexGuard<'a, T> {
     type Target = T;
     fn deref(&self) -> &T {
-        &*self.inner
+        &self.inner
     }
 }
 
 impl<'a, T: ?Sized> DerefMut for MutexGuard<'a, T> {
     fn deref_mut(&mut self) -> &mut T {
-        &mut *self.inner
+        &mut self.inner
     }
 }
 
